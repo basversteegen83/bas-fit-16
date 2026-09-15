@@ -1,0 +1,1 @@
+export const metadata={title:'Bas Fit 16',description:'Persoonlijke 16-weken fitness tracker'};export default function Layout({children}){return <html lang="nl"><body>{children}</body></html>}
