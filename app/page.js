@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import './style.css';
-import { circuits, strength, abs, week, meals, circuitFor } from './data';
+import { circuits, strength, abs, meals, circuitFor, sessionTypes, dayNames } from './data';
 import { loadDb, saveDb, localDate, programmeWeek, weekLabel } from './db';
 import Guided, { Art } from './Guided';
 
@@ -24,7 +24,9 @@ function App() {
     today = db.logs[date] || {},
     weekNr = programmeWeek(db.settings.startDate, date),
     weekText = weekLabel(weekNr, db.settings.startDate),
-    circuitCfg = circuitFor(weekNr);
+    circuitCfg = circuitFor(weekNr),
+    session = db.settings.schedule[day],
+    sessionType = sessionTypes[session] || { kind: 'rest' };
 
   function update(fn) { setDb(prev => { const n = fn(prev); saveDb(n); return n }) }
   function persist(n) { update(() => n) }
@@ -35,6 +37,9 @@ function App() {
     return Math.max(0, ...Object.values(db.logs).flatMap(l => Object.keys(l).filter(k => re.test(k)).map(k => Number(l[k]) || 0)));
   }
   function startGuided(kind, g) { setGuided(kind === 'circuit' ? { kind, g, cfg: circuitCfg } : { kind, g }) }
+  function setScheduleDay(i, v) {
+    update(d => ({ ...d, settings: { ...d.settings, schedule: d.settings.schedule.map((x, j) => j === i ? v : x) } }));
+  }
   function addMeasure() {
     if (!today.mw && !today.mz) return;
     persist({ ...db, measure: [...db.measure, { date, w: today.mw || '', z: today.mz || '' }] });
@@ -56,7 +61,9 @@ function App() {
     {tab === 'today' && <section>
       <h2>Vandaag</h2>
       <p className="weekLine">{weekText}</p>
-      <div className="hero"><b>{week[day]}</b><span>{mtb ? 'MTB geregistreerd — vandaag geen stappendoel nodig.' : 'Gemiddeld 7.000–9.000 stappen · ±2.500 kcal · 160–170 g eiwit'}</span></div>
+      <div className="hero"><b>{session}</b><span>{mtb ? 'MTB geregistreerd — vandaag geen stappendoel nodig.' : 'Gemiddeld 7.000–9.000 stappen · ±2.500 kcal · 160–170 g eiwit'}</span></div>
+      {sessionType.kind !== 'rest' && <button className="startWorkout" onClick={() => startGuided(sessionType.kind, sessionType.g)}>
+        Start {sessionType.kind === 'circuit' ? 'Circuit' : 'Kracht'} {sessionType.g}</button>}
       <label>Stappen<input type="number" disabled={mtb} value={today.steps || ''} onChange={e => log('steps', e.target.value)} /></label>
       <div className="mtb">
         <label className="toggle"><input type="checkbox" checked={mtb} onChange={e => log('mtb', e.target.checked)} /><span>Vandaag mountainbiken</span></label>
@@ -80,7 +87,7 @@ function App() {
         </div>
         <div className="hero"><b>Circuit {choice}</b>
           <span>{circuitCfg.rounds} rondes · {circuitCfg.work} sec werken → score → {circuitCfg.rest} sec rust → volgende oefening.</span>
-          {choice === 'B' && <span>Op zondag mag een stevige MTB-rit van 45–90 min dit circuit vervangen.</span>}</div>
+          {choice === 'B' && <span>Een stevige MTB-rit van 45–90 min mag dit circuit vervangen.</span>}</div>
         <button className="startWorkout" onClick={() => startGuided('circuit', choice)}>Start Circuit {choice}</button>
         {circuits[choice].map((x, i) => <article key={i}>
           <Art file={x[1]} name={x[0]} /><b>{x[0]}</b><p>{x[2]}</p>
@@ -128,6 +135,12 @@ function App() {
       <label>Buik (cm)<input type="number" step=".1" value={today.mz || ''} onChange={e => log('mz', e.target.value)} /></label>
       <button className="save" onClick={addMeasure}>Meting bewaren</button>
       {db.measure.slice().reverse().map((m, i) => <div key={i} className="history"><b>{m.date}</b><span>{m.w || '–'} kg · {m.z || '–'} cm</span></div>)}
+
+      <h3>Weekschema</h3>
+      {dayNames.map((n, i) => <label key={n} className={i === day ? 'scheduleDay today' : 'scheduleDay'}>{n}
+        <select value={db.settings.schedule[i]} onChange={e => setScheduleDay(i, e.target.value)}>
+          {Object.keys(sessionTypes).map(t => <option key={t}>{t}</option>)}
+        </select></label>)}
     </section>}
   </main>;
 }

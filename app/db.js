@@ -1,4 +1,4 @@
-import { DEFAULT_SETTINGS, PROGRAMME_WEEKS } from './data';
+import { DEFAULT_SETTINGS, PROGRAMME_WEEKS, sessionTypes } from './data';
 
 // Structuur in localStorage 'basfitdb':
 // { version, logs: {YYYY-MM-DD: {...}}, measure: [{date,w,z}], settings: {...} }
@@ -6,12 +6,15 @@ export const DB_VERSION = 2;
 
 export function migrate(raw) {
   const d = raw && typeof raw === 'object' ? raw : {};
+  const settings = { ...DEFAULT_SETTINGS, ...(d.settings && typeof d.settings === 'object' ? d.settings : {}) };
+  const sch = settings.schedule;
+  if (!Array.isArray(sch) || sch.length !== 7 || !sch.every(x => x in sessionTypes)) settings.schedule = DEFAULT_SETTINGS.schedule;
   return {
     ...d,
     version: DB_VERSION,
     logs: d.logs && typeof d.logs === 'object' ? d.logs : {},
     measure: Array.isArray(d.measure) ? d.measure : [],
-    settings: { ...DEFAULT_SETTINGS, ...(d.settings && typeof d.settings === 'object' ? d.settings : {}) },
+    settings,
   };
 }
 

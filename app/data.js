@@ -51,7 +51,17 @@ export const abs = [
   ['Forearm Plank', 'forearm-plank', '3 × 30–60 sec', 'Span buik en billen en houd lichaam recht.', 'Lichaamsgewicht'],
 ];
 
-export const week = ['Kracht A + buik', 'Fit Circuit A', 'Rust + wandelen', 'Kracht B + buik', 'Rust + wandelen', 'Kracht C + buik', 'Fit Circuit B / MTB'];
+// Mogelijke sessies in het weekschema en welke begeleide training erbij hoort.
+export const sessionTypes = {
+  'Rust + wandelen': { kind: 'rest' },
+  'Kracht A + buik': { kind: 'strength', g: 'A' },
+  'Kracht B + buik': { kind: 'strength', g: 'B' },
+  'Kracht C + buik': { kind: 'strength', g: 'C' },
+  'Fit Circuit A': { kind: 'circuit', g: 'A' },
+  'Fit Circuit B / MTB': { kind: 'circuit', g: 'B' },
+};
+
+export const dayNames = ['Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag', 'Zondag'];
 
 export const meals = [
   ['Ontbijt', '300 g magere kwark/skyr + 50 g havermout + fruit; of 3 eieren + 2 volkoren boterhammen + fruit.'],
@@ -62,7 +72,11 @@ export const meals = [
 
 // Programma: 16 weken vanaf de startdatum.
 export const PROGRAMME_WEEKS = 16;
-export const DEFAULT_SETTINGS = { startDate: '2026-10-06' };
+export const DEFAULT_SETTINGS = {
+  startDate: '2026-10-06',
+  // Maandag eerst.
+  schedule: ['Rust + wandelen', 'Kracht A + buik', 'Fit Circuit A', 'Kracht B + buik', 'Rust + wandelen', 'Fit Circuit B / MTB', 'Kracht C + buik'],
+};
 
 // Circuitopbouw per week. Pas hier rondes en werk/rust-tijden (seconden) aan.
 export const circuitProgression = [
