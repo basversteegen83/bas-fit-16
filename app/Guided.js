@@ -1,6 +1,6 @@
 'use client';
-import { useMemo, useState } from 'react';
-import { circuits, strength, abs, warmup, cooldown, SET_REST } from './data';
+import { Fragment, useMemo, useState } from 'react';
+import { circuits, strength, abs, warmup, cooldown, strengthSupersets, STRENGTH_ROUNDS, SUPERSET_REST, SINGLE_REST, ABS_ROUNDS, ABS_REST } from './data';
 import { useSequence, useWakeLock } from './useTimer';
 
 export function Art({ file, name }) {
@@ -25,17 +25,26 @@ function circuitSteps(g, { rounds, work, rest }) {
 }
 
 function strengthSteps(g) {
-  const blocks = [
-    ...strength[g].map((ex, i) => ({ ex, key: `s${g}${i}`, label: `KRACHT ${g} · OEFENING ${i + 1}/${strength[g].length}`, hint: 'bv. 8 kg: 12 / 11 / 9' })),
-    ...abs.map((ex, i) => ({ ex, key: `ab${g}${i}`, label: `BUIKBLOK · OEFENING ${i + 1}/${abs.length}`, hint: 'gewicht / herhalingen' })),
+  const sets = strengthSupersets[g];
+  const groups = [
+    ...sets.map((idx, n) => {
+      const pair = idx.length > 1, name = `${pair ? 'Superset' : 'Oefening'} ${n + 1}/${sets.length}`;
+      return {
+        items: idx.map(i => ({ ex: strength[g][i], key: `s${g}${i}`, hint: 'bv. 8 kg: 12 / 11 / 9' })),
+        rounds: STRENGTH_ROUNDS, rest: pair ? SUPERSET_REST : SINGLE_REST,
+        name, label: `KRACHT ${g} · ${name.toUpperCase()}`, skip: pair ? 'Superset overslaan' : 'Oefening overslaan',
+      };
+    }),
+    {
+      items: abs.map((ex, i) => ({ ex, key: `ab${g}${i}`, hint: 'gewicht / herhalingen' })),
+      rounds: ABS_ROUNDS, rest: ABS_REST, name: 'Buikcircuit', label: 'BUIKCIRCUIT', skip: 'Buikcircuit overslaan',
+    },
   ];
   const steps = stretchSteps('Warming-up', warmup(strength[g][0][0]));
-  blocks.forEach((b, bi) => {
-    const sets = parseInt(b.ex[2], 10) || 3;
-    for (let set = 1; set <= sets; set++) {
-      steps.push({ t: 'set', ...b, set, sets });
-      const next = set < sets ? `${b.ex[0]} – set ${set + 1}` : blocks[bi + 1] && blocks[bi + 1].ex[0];
-      if (next) steps.push({ t: 'rest', label: b.label, secs: SET_REST, next });
+  groups.forEach((grp, gi) => {
+    for (let r = 1; r <= grp.rounds; r++) {
+      grp.items.forEach((it, k) => steps.push({ t: 'set', ...it, grp, gi, k, r, label: grp.label }));
+      if (r < grp.rounds) steps.push({ t: 'rest', label: grp.label, secs: grp.rest, next: `${grp.items[0].ex[0]} – ronde ${r + 1}` });
     }
   });
   steps.push(...stretchSteps('Cooling-down', cooldown), { t: 'done', label: `KRACHT ${g} + BUIK` });
@@ -53,11 +62,12 @@ export default function Guided({ plan, today, best, previous, onLog, onExit }) {
     setScore('');
     seq.next();
   }
-  // Sla de resterende sets van deze oefening over.
-  function nextExercise() {
-    const i = steps.findIndex((s, j) => j > seq.idx && s.t === 'set' && s.key !== step.key);
+  // Sla de rest van deze superset (of het buikcircuit) over.
+  function skipGroup() {
+    const i = steps.findIndex((s, j) => j > seq.idx && s.t === 'set' && s.gi !== step.gi);
     seq.goto(i < 0 ? steps.findIndex(s => s.phase === 'Cooling-down') : i);
   }
+  const lastOfGroup = step.t === 'set' && !steps.some((s, j) => j > seq.idx && s.t === 'set' && s.gi === step.gi);
   const pauseButton = <button className="wide" onClick={seq.running ? seq.pause : seq.resume}>{seq.running ? 'Pauze' : 'Doorgaan'}</button>;
   const skipButton = <button className="skip" onClick={seq.next}>Overslaan</button>;
   const title = { work: step.ex && step.ex[0], score: step.ex && step.ex[0], set: step.ex && step.ex[0], timed: step.title, rest: 'Rust', done: 'Training klaar' }[step.t];
@@ -86,14 +96,16 @@ export default function Guided({ plan, today, best, previous, onLog, onExit }) {
       </div>}
       {step.t === 'set' && <>
         <Art file={step.ex[1]} name={step.ex[0]} />
-        <div className="setCount">Set {step.set} van {step.sets} · {step.ex[2]}</div>
+        <p className="supersetLine">{step.grp.name} · {step.grp.items.map((it, k) =>
+          <Fragment key={k}>{k > 0 && ' → '}{k === step.k ? <b>{it.ex[0]}</b> : it.ex[0]}</Fragment>)}</p>
+        <div className="setCount">Ronde {step.r} van {step.grp.rounds} · {step.ex[2].replace(/^\d+\s*×\s*/, '')}</div>
         <article>
           <div className="weightAdvice"><b>Aanbevolen start</b><span>{step.ex[4]}</span>{previous(step.key) && <small>Vorige training: {previous(step.key)}</small>}</div>
           <p>{step.ex[3]}</p>
           <input placeholder={step.hint} value={today[step.key] || ''} onChange={e => onLog(step.key, e.target.value)} />
         </article>
         <button className="wide" onClick={seq.next}>Set klaar</button>
-        {step.set < step.sets && <button className="skip" onClick={nextExercise}>Volgende oefening</button>}
+        {!lastOfGroup && <button className="skip" onClick={skipGroup}>{step.grp.skip}</button>}
       </>}
       {step.t === 'rest' && <>
         <div className="restLabel">Rust</div>

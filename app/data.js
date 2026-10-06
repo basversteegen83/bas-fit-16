@@ -113,5 +113,17 @@ export const cooldown = [
   ['Kindhouding', 'Zit op je hielen, armen ver naar voren, borst richting de vloer en adem rustig door.', 40],
 ];
 
-// Rust tussen sets in de begeleide krachttraining (seconden).
-export const SET_REST = 90;
+// Begeleide krachttraining als supersets. Elk blok is een lijst indexen in strength[g],
+// zodat de log-sleutels (s{g}{index}) gelijk blijven aan het Oefeningen-tabblad.
+// Per ronde: alle oefeningen van het blok achter elkaar, daarna rust.
+export const strengthSupersets = {
+  A: [[0, 1], [2, 3], [4]], // Floor Press + One-arm Row, Shoulder Press + Lateral Raise, Goblet Squat
+  B: [[0, 1], [2, 3]], // Goblet Squat + Romanian Deadlift, Floor Press + One-arm Row
+  C: [[0, 1], [2, 3], [4, 5]], // Floor Press + One-arm Row, Shoulder Press + Lateral Raise, Split Squat + Romanian Deadlift
+};
+export const STRENGTH_ROUNDS = 3;
+export const SUPERSET_REST = 75; // rust tussen rondes van een superset (seconden)
+export const SINGLE_REST = 90; // rust tussen sets van een losse oefening
+// Buikblok als één circuit: Weighted Crunch → Reverse Crunch → Forearm Plank.
+export const ABS_ROUNDS = 3;
+export const ABS_REST = 30;
