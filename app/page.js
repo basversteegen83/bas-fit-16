@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import './style.css';
 import { circuits, strength, abs, meals, circuitFor, sessionTypes, dayNames } from './data';
-import { loadDb, saveDb, localDate, programmeWeek, weekLabel } from './db';
+import { loadDb, saveDb, migrate, localDate, programmeWeek, weekLabel } from './db';
 import Guided, { Art } from './Guided';
 
 function App() {
@@ -40,9 +40,39 @@ function App() {
   function setScheduleDay(i, v) {
     update(d => ({ ...d, settings: { ...d.settings, schedule: d.settings.schedule.map((x, j) => j === i ? v : x) } }));
   }
+  // Eén meting per datum: opnieuw bewaren vervangt de meting van vandaag.
   function addMeasure() {
     if (!today.mw && !today.mz) return;
-    persist({ ...db, measure: [...db.measure, { date, w: today.mw || '', z: today.mz || '' }] });
+    update(d => ({ ...d, measure: [...d.measure.filter(m => m.date !== date), { date, w: today.mw || '', z: today.mz || '' }] }));
+  }
+  function deleteMeasure(i) {
+    const m = db.measure[i];
+    if (!confirm(`Meting van ${m.date} verwijderen?`)) return;
+    update(d => ({ ...d, measure: d.measure.filter((_, j) => j !== i) }));
+  }
+  async function exportData() {
+    const name = `basfit-${date}.json`;
+    const file = new File([JSON.stringify(db, null, 2)], name, { type: 'application/json' });
+    // Als beginschermapp op iOS werkt een download-link slecht; gebruik daar het deelmenu.
+    if (navigator.standalone && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: name }); return } catch (e) { if (e.name === 'AbortError') return }
+    }
+    const url = URL.createObjectURL(file), a = document.createElement('a');
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+  async function importData(e) {
+    const f = e.target.files[0];
+    e.target.value = '';
+    if (!f) return;
+    let d;
+    try { d = JSON.parse(await f.text()) } catch { alert('Dit is geen geldig JSON-bestand. Er is niets gewijzigd.'); return }
+    if (!d || !d.logs || typeof d.logs !== 'object' || Array.isArray(d.logs) || !Array.isArray(d.measure)) {
+      alert('Dit bestand mist "logs" of "measure". Er is niets gewijzigd.'); return;
+    }
+    if (!confirm(`Alle huidige gegevens vervangen door ${f.name}? (${Object.keys(d.logs).length} dagen, ${d.measure.length} metingen)`)) return;
+    persist(migrate(d));
   }
   function previous(key) {
     let dates = Object.keys(db.logs).filter(d => d < date && db.logs[d][key]).sort().reverse();
@@ -134,13 +164,20 @@ function App() {
       <label>Gewicht (kg)<input type="number" step=".1" value={today.mw || ''} onChange={e => log('mw', e.target.value)} /></label>
       <label>Buik (cm)<input type="number" step=".1" value={today.mz || ''} onChange={e => log('mz', e.target.value)} /></label>
       <button className="save" onClick={addMeasure}>Meting bewaren</button>
-      {db.measure.slice().reverse().map((m, i) => <div key={i} className="history"><b>{m.date}</b><span>{m.w || '–'} kg · {m.z || '–'} cm</span></div>)}
+      {db.measure.map((m, i) => ({ m, i })).sort((a, b) => b.m.date.localeCompare(a.m.date) || b.i - a.i).map(({ m, i }) =>
+        <div key={i} className="history"><b>{m.date}</b><span>{m.w || '–'} kg · {m.z || '–'} cm</span>
+          <button className="del" aria-label={`Meting van ${m.date} verwijderen`} onClick={() => deleteMeasure(i)}>×</button></div>)}
 
       <h3>Weekschema</h3>
       {dayNames.map((n, i) => <label key={n} className={i === day ? 'scheduleDay today' : 'scheduleDay'}>{n}
         <select value={db.settings.schedule[i]} onChange={e => setScheduleDay(i, e.target.value)}>
           {Object.keys(sessionTypes).map(t => <option key={t}>{t}</option>)}
         </select></label>)}
+
+      <h3>Gegevens</h3>
+      <button className="save" onClick={exportData}>Exporteer gegevens</button>
+      <label className="save secondary">Importeer gegevens
+        <input type="file" accept="application/json,.json" hidden onChange={importData} /></label>
     </section>}
   </main>;
 }
