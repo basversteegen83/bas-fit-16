@@ -1,5 +1,23 @@
 # Changelog
 
+## strength-supersets (2026-10-06)
+
+Guided strength took about 60–65 minutes because there was a 90 s rest after each of the 24–27 sets. The goal is 35–40 minutes including warm-up and cooldown.
+
+- **Supersets in guided strength.** `strengthSupersets` in `data.js` groups each day's exercises, using their index in `strength[g]`:
+  - A: Floor Press + One-arm Row, Shoulder Press + Lateral Raise, Goblet Squat alone.
+  - B: Goblet Squat + Romanian Deadlift, Floor Press + One-arm Row.
+  - C: Floor Press + One-arm Row, Shoulder Press + Lateral Raise, Split Squat + Romanian Deadlift.
+- **One round per pair.** Each round is set 1 of exercise 1 → "Set klaar" → straight to exercise 2 → "Set klaar" → rest. There are 3 rounds (`STRENGTH_ROUNDS`).
+- **Abs block is a circuit.** Weighted Crunch → Reverse Crunch → Forearm Plank, 3 rounds (`ABS_ROUNDS`).
+- **Rest between rounds:** `SUPERSET_REST` 75 s, `SINGLE_REST` 90 s, `ABS_REST` 30 s. There is no timed rest after a block's last round. The next block's set screen waits for "Set klaar", so you switch equipment at your own pace.
+- **Set screen** shows "Superset 1/3 · Floor Press → One-arm Row" with the current exercise in bold, plus "Ronde N van 3 · reps". A single exercise shows "Oefening 3/3 · Goblet Squat".
+- "Volgende oefening" is now "Superset overslaan" / "Oefening overslaan" / "Buikcircuit overslaan" and skips the rest of the block.
+- **Log keys are unchanged** (`s{g}{i}`, `ab{g}{i}`), and so is the Oefeningen tab. Only the guided sequence is different.
+- `SET_REST` has been removed.
+
+Rough duration: warm-up 4 min and cooldown 4.7 min are fixed. Rest totals 9 min for A, 6 min for B and 8.5 min for C. Assuming about 45 s per set including setup, sessions come to about **36 min (A), 30 min (B) and 37 min (C)**. B comes in under the target.
+
 ## improvements-1 (2026-10-06)
 
 ### Prep
