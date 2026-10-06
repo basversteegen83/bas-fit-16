@@ -2,21 +2,14 @@
 import { useEffect, useState } from 'react';
 import './style.css';
 import { circuits, strength, abs, week, meals } from './data';
-
-function Art({ file, name }) {
-  return <img className="exerciseCard" src={`/exercises/cards/${file}.png`} alt={`${name} uitvoering`} />;
-}
+import Guided, { Art } from './Guided';
 
 function App() {
   const [tab, setTab] = useState('today'),
     [kind, setKind] = useState('circuit'),
     [choice, setChoice] = useState('A'),
     [db, setDb] = useState({ logs: {}, measure: [] }),
-    [guided, setGuided] = useState(null),
-    [seconds, setSeconds] = useState(60),
-    [running, setRunning] = useState(false),
-    [phase, setPhase] = useState('work'),
-    [score, setScore] = useState('');
+    [guided, setGuided] = useState(null);
 
   useEffect(() => {
     try { setDb(JSON.parse(localStorage.basfitdb) || { logs: {}, measure: [] }) } catch {}
@@ -31,28 +24,7 @@ function App() {
   function best(g, i) {
     return Math.max(0, ...Object.values(db.logs).flatMap(l => [1, 2, 3].map(r => Number(l[`c${g}${i}r${r}`]) || 0)));
   }
-  function startGuided(g) { setGuided({ g, i: 0, r: 1 }); setPhase('work'); setSeconds(60); setRunning(true); setScore('') }
-
-  useEffect(() => {
-    if (!running || !guided) return;
-    let id = setInterval(() => setSeconds(s => {
-      if (s > 1) return s - 1;
-      setRunning(false);
-      if (phase === 'work') { setPhase('score'); return 0 }
-      if (phase === 'rest') { setPhase('work'); setRunning(true); return 60 }
-      return 0;
-    }), 1000);
-    return () => clearInterval(id);
-  }, [running, guided, phase]);
-
-  function afterScore() {
-    let { g, i, r } = guided;
-    if (score !== '') log(`c${g}${i}r${r}`, score);
-    setScore('');
-    if (i === 5 && r === 2) { setGuided(null); setRunning(false); return }
-    setGuided(i < 5 ? { g, i: i + 1, r } : { g, i: 0, r: r + 1 });
-    setPhase('rest'); setSeconds(30); setRunning(true);
-  }
+  function startGuided(g) { setGuided({ kind: 'circuit', g }) }
   function addMeasure() {
     if (!today.mw && !today.mz) return;
     persist({ ...db, measure: [...db.measure, { date, w: today.mw || '', z: today.mz || '' }] });
@@ -62,33 +34,7 @@ function App() {
     return dates.length ? db.logs[dates[0]][key] : '';
   }
 
-  if (guided) {
-    let x = circuits[guided.g][guided.i];
-    return <main className="guided">
-      <header><small>CIRCUIT {guided.g} · RONDE {guided.r}/2</small><h1>{phase === 'rest' ? 'Rust' : x[0]}</h1></header>
-      <section>
-        {phase === 'work' && <>
-          <Art file={x[1]} name={x[0]} />
-          <div className="bigTimer">{seconds}</div>
-          <p>{x[2]}</p>
-          <p className="tip"><b>Let op:</b> {x[3]}</p>
-          <button className="wide" onClick={() => setRunning(!running)}>{running ? 'Pauze' : 'Doorgaan'}</button>
-        </>}
-        {phase === 'score' && <div className="scoreScreen">
-          <h2>Hoeveel nette herhalingen?</h2>
-          <p>Beste eerdere score: <b>{best(guided.g, guided.i) || '–'}</b></p>
-          <input autoFocus type="number" value={score} onChange={e => setScore(e.target.value)} placeholder="score" />
-          <button className="wide" onClick={afterScore}>Opslaan & rust</button>
-        </div>}
-        {phase === 'rest' && <>
-          <div className="restLabel">Rust</div>
-          <div className="bigTimer">{seconds}</div>
-          <p>Hierna: <b>{x[0]}</b></p>
-        </>}
-        <button className="stop" onClick={() => { setGuided(null); setRunning(false) }}>Training stoppen</button>
-      </section>
-    </main>;
-  }
+  if (guided) return <Guided plan={guided} best={best} onLog={log} onExit={() => setGuided(null)} />;
 
   let mtb = !!today.mtb;
   const switchKind = k => { setKind(k); setChoice('A') };
