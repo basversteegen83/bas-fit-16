@@ -1,5 +1,185 @@
-'use client';import{useEffect,useState}from'react';import'./style.css';
-const circuits={A:[['Jumping Jacks','jumping-jacks','Spring voeten naar buiten terwijl armen boven je hoofd gaan. Spring terug en herhaal.','Land zacht en houd knieën licht gebogen.'],['Bodyweight Squats','bodyweight-squats','Voeten schouderbreed. Duw heupen naar achteren, zak gecontroleerd en kom rechtop.','Knieën volgen tenen; borst omhoog.'],['Push-ups','push-ups','Laat borst richting vloer zakken en duw terug.','Houd hoofd, romp en benen in één lijn.'],['Mountain Climbers','mountain-climbers','Start in hoge plank. Breng afwisselend een knie richting borst.','Houd heupen zo stil mogelijk.'],['Dumbbell Bent-over Rows','dumbbell-bent-over-rows','Buig vanuit heupen voorover en trek dumbbells richting onderribben.','Rug neutraal; schouderbladen naar elkaar.'],['Dead Bug','dead-bug','Lig op rug. Strek tegenovergestelde arm en been en wissel.','Houd onderrug tegen de mat.']],B:[['Boxing Straight Punches','boxing-straight-punches','Stoot links en rechts recht vooruit en trek direct terug.','Draai licht vanuit romp en heup.'],['Reverse Lunges','reverse-lunges','Stap één been naar achteren, zak en duw terug.','Voorste knie stabiel.'],['Shoulder Taps','shoulder-taps','Hoge plank. Tik afwisselend de tegenovergestelde schouder.','Span buik en billen; heupen stil.'],['Dumbbell Romanian Deadlift','dumbbell-romanian-deadlift','Duw heupen naar achteren, gewichten langs benen, kom rechtop.','Rug neutraal; beweging uit heupen.'],['High Knees','high-knees','Loop of ren op de plaats en breng knieën hoog.','Land zacht en stabiel.'],['Forearm Plank','forearm-plank','Steun op onderarmen en tenen en houd lichaam recht.','Span buik en billen.']]};
-const strength={A:[['Floor Press','floor-press','3 × 8–12','Lig op rug met dumbbells naast borst. Duw recht omhoog.','2 × 8 kg'],['One-arm Row','one-arm-row','3 × 8–12 per arm','Steun op stoel of bank. Trek dumbbell naar je heup.','10 kg'],['Shoulder Press','shoulder-press','3 × 8–12','Duw dumbbells vanaf schouders boven je hoofd.','2 × 6,5 kg'],['Lateral Raise','lateral-raise','3 × 12–15','Hef lichte dumbbells zijwaarts tot schouderhoogte.','2 × 3,5 kg'],['Goblet Squat','goblet-squat','3 × 10–12','Houd één dumbbell voor borst en zak gecontroleerd.','10 kg']],B:[['Goblet Squat','goblet-squat','3 × 10–12','Gewicht voor borst; zak rustig en kom omhoog.','10 kg'],['Romanian Deadlift','dumbbell-romanian-deadlift','3 × 8–12','Heupen naar achteren, dumbbells langs benen, rug neutraal.','2 × 10 kg'],['Floor Press','floor-press','3 × 8–12','Duw dumbbells vanuit ruglig omhoog.','2 × 8 kg'],['One-arm Row','one-arm-row','3 × 8–12 per arm','Trek dumbbell gecontroleerd naar heup.','10 kg']],C:[['Floor Press','floor-press','3 × 8–12','Duw dumbbells vanuit ruglig omhoog.','2 × 8 kg'],['One-arm Row','one-arm-row','3 × 8–12 per arm','Trek dumbbell naar heup.','10 kg'],['Shoulder Press','shoulder-press','3 × 8–12','Duw dumbbells vanaf schouders omhoog.','2 × 6,5 kg'],['Lateral Raise','lateral-raise','3 × 12–15','Hef lichte dumbbells gecontroleerd zijwaarts.','2 × 3,5 kg'],['Split Squat','split-squat','3 × 8–10 per been','Eén voet voor en één achter; zak recht omlaag.','Lichaamsgewicht'],['Romanian Deadlift','dumbbell-romanian-deadlift','3 × 8–12','Duw heupen naar achteren en kom gecontroleerd rechtop.','2 × 10 kg']]};const abs=[['Weighted Crunch','weighted-crunch','3 × 10–15','Krul schouders van vloer; houd eventueel een licht gewicht bij borst.','2,5–3,5 kg'],['Reverse Crunch','reverse-crunches','3 × 8–15','Breng knieën richting borst en kantel bekken rustig omhoog.','Lichaamsgewicht'],['Forearm Plank','forearm-plank','3 × 30–60 sec','Span buik en billen en houd lichaam recht.','Lichaamsgewicht']];function Art({file,name}){return <img className="exerciseCard" src={`/exercises/cards/${file}.png`} alt={`${name} uitvoering`}/>}
-function App(){const[tab,setTab]=useState('today'),[kind,setKind]=useState('circuit'),[choice,setChoice]=useState('A'),[db,setDb]=useState({logs:{},measure:[]}),[guided,setGuided]=useState(null),[seconds,setSeconds]=useState(60),[running,setRunning]=useState(false),[phase,setPhase]=useState('work'),[score,setScore]=useState('');useEffect(()=>{try{setDb(JSON.parse(localStorage.basfitdb)||{logs:{},measure:[]})}catch{}},[]);const date=new Date().toISOString().slice(0,10),day=(new Date().getDay()+6)%7,today=db.logs[date]||{},week=['Kracht A + buik','Fit Circuit A','Rust + wandelen','Kracht B + buik','Rust + wandelen','Kracht C + buik','Fit Circuit B / MTB'];function persist(n){setDb(n);localStorage.basfitdb=JSON.stringify(n)}function log(k,v){persist({...db,logs:{...db.logs,[date]:{...today,[k]:v}}})}function best(g,i){return Math.max(0,...Object.values(db.logs).flatMap(l=>[1,2,3].map(r=>Number(l[`c${g}${i}r${r}`])||0)))}function startGuided(g){setGuided({g,i:0,r:1});setPhase('work');setSeconds(60);setRunning(true);setScore('')}useEffect(()=>{if(!running||!guided)return;let id=setInterval(()=>setSeconds(s=>{if(s>1)return s-1;setRunning(false);if(phase==='work'){setPhase('score');return 0}if(phase==='rest'){setPhase('work');setRunning(true);return 60}return 0}),1000);return()=>clearInterval(id)},[running,guided,phase]);function afterScore(){let{g,i,r}=guided;if(score!=='')log(`c${g}${i}r${r}`,score);setScore('');if(i===5&&r===2){setGuided(null);setRunning(false);return}setGuided(i<5?{g,i:i+1,r}:{g,i:0,r:r+1});setPhase('rest');setSeconds(30);setRunning(true)}function addMeasure(){if(!today.mw&&!today.mz)return;persist({...db,measure:[...db.measure,{date,w:today.mw||'',z:today.mz||''}]})}function previous(key){let dates=Object.keys(db.logs).filter(d=>d<date&&db.logs[d][key]).sort().reverse();return dates.length?db.logs[dates[0]][key]:''}if(guided){let x=circuits[guided.g][guided.i];return <main className="guided"><header><small>CIRCUIT {guided.g} · RONDE {guided.r}/2</small><h1>{phase==='rest'?'Rust':x[0]}</h1></header><section>{phase==='work'&&<><Art file={x[1]} name={x[0]}/><div className="bigTimer">{seconds}</div><p>{x[2]}</p><p className="tip"><b>Let op:</b> {x[3]}</p><button className="wide" onClick={()=>setRunning(!running)}>{running?'Pauze':'Doorgaan'}</button></>}{phase==='score'&&<div className="scoreScreen"><h2>Hoeveel nette herhalingen?</h2><p>Beste eerdere score: <b>{best(guided.g,guided.i)||'–'}</b></p><input autoFocus type="number" value={score} onChange={e=>setScore(e.target.value)} placeholder="score"/><button className="wide" onClick={afterScore}>Opslaan & rust</button></div>}{phase==='rest'&&<><div className="restLabel">Rust</div><div className="bigTimer">{seconds}</div><p>Hierna: <b>{x[0]}</b></p></>}<button className="stop" onClick={()=>{setGuided(null);setRunning(false)}}>Training stoppen</button></section></main>}
-let mtb=!!today.mtb;const switchKind=k=>{setKind(k);setChoice('A')};return <main><header><small>16 WEKEN · PERSOONLIJKE TRACKER</small><h1>Bas Fit 16</h1><p>Start 91,5 kg · buik 102 cm</p></header><nav>{[['today','Vandaag'],['exercises','Oefeningen'],['food','Eten'],['history','Historie']].map(([k,n])=><button className={tab===k?'on':''} onClick={()=>setTab(k)}>{n}</button>)}</nav>{tab==='today'&&<section><h2>Vandaag</h2><div className="hero"><b>{week[day]}</b><span>{mtb?'MTB geregistreerd — vandaag geen stappendoel nodig.':'Gemiddeld 7.000–9.000 stappen · ±2.500 kcal · 160–170 g eiwit'}</span></div><label>Stappen<input type="number" disabled={mtb} value={today.steps||''} onChange={e=>log('steps',e.target.value)}/></label><div className="mtb"><label className="toggle"><input type="checkbox" checked={mtb} onChange={e=>log('mtb',e.target.checked)}/><span>Vandaag mountainbiken</span></label>{mtb&&<div className="mtbFields"><label>Duur (minuten)<input type="number" value={today.mtbMinutes||''} onChange={e=>log('mtbMinutes',e.target.value)}/></label><label>Afstand (km, optioneel)<input type="number" step=".1" value={today.mtbKm||''} onChange={e=>log('mtbKm',e.target.value)}/></label></div>}</div></section>}{tab==='exercises'&&<section><h2>Oefeningen</h2><div className="seg"><button className={kind==='circuit'?'on':''} onClick={()=>switchKind('circuit')}>Circuit</button><button className={kind==='strength'?'on':''} onClick={()=>switchKind('strength')}>Kracht</button></div>{kind==='circuit'&&<><div className="picker"><button className={choice==='A'?'on':''} onClick={()=>setChoice('A')}>Circuit A</button><button className={choice==='B'?'on':''} onClick={()=>setChoice('B')}>Circuit B</button></div><div className="hero"><b>Circuit {choice}</b><span>{choice==='B'?'Op zondag mag een stevige MTB-rit van 45–90 min dit circuit vervangen.':'60 sec werken → score → 30 sec rust → volgende oefening.'}</span></div><button className="startWorkout" onClick={()=>startGuided(choice)}>Start Circuit {choice}</button>{circuits[choice].map((x,i)=><article><Art file={x[1]} name={x[0]}/><b>{x[0]}</b><p>{x[2]}</p><p className="tip"><b>Let op:</b> {x[3]}</p><small>Beste score: {best(choice,i)||'–'}</small></article>)}</>}{kind==='strength'&&<><div className="picker three">{['A','B','C'].map(g=><button className={choice===g?'on':''} onClick={()=>setChoice(g)}>Kracht {g}</button>)}</div><div className="hero"><b>Kracht {choice} + buik</b><span>De startgewichten zijn bewust conservatief. De eerste trainingen gebruiken we om jouw niveau te kalibreren.</span></div>{strength[choice].map((x,i)=>{let key=`s${choice}${i}`,prev=previous(key);return <article><Art file={x[1]} name={x[0]}/><b>{x[0]}</b><em>{x[2]}</em><div className="weightAdvice"><b>Aanbevolen start</b><span>{x[4]}</span>{prev&&<small>Vorige training: {prev}</small>}</div><p>{x[3]}</p><input placeholder="bv. 8 kg: 12 / 11 / 9" value={today[key]||''} onChange={e=>log(key,e.target.value)}/><small>Regel: haal je alle 3 sets aan de bovengrens met nette techniek, verhoog de volgende keer één gewichtsstap.</small></article>})}<h3>Buikblok</h3>{abs.map((x,i)=>{let key=`ab${choice}${i}`,prev=previous(key);return <article><Art file={x[1]} name={x[0]}/><b>{x[0]}</b><em>{x[2]}</em><div className="weightAdvice"><b>Aanbevolen start</b><span>{x[4]}</span>{prev&&<small>Vorige training: {prev}</small>}</div><p>{x[3]}</p><input placeholder="gewicht / herhalingen" value={today[key]||''} onChange={e=>log(key,e.target.value)}/></article>})}</>}</section>}{tab==='food'&&<section><h2>Eten</h2><div className="hero"><b>±2.500 kcal · 160–170 g eiwit</b><span>Startpunt; na twee weken beoordelen we de trend.</span></div>{[['Ontbijt','300 g magere kwark/skyr + 50 g havermout + fruit; of 3 eieren + 2 volkoren boterhammen + fruit.'],['Lunch','3–4 volkoren boterhammen met royale portie kip, rosbief, tonijn of eieren + groente.'],['Diner','±200 g kip/vis/mager vlees + veel groente + normale portie aardappel, rijst of pasta.'],['Tussendoor','Kwark/skyr, fruit, cottage cheese of eiwitshake.']].map(x=><article><b>{x[0]}</b><p>{x[1]}</p></article>)}</section>}{tab==='history'&&<section><h2>Voortgang</h2><label>Gewicht (kg)<input type="number" step=".1" value={today.mw||''} onChange={e=>log('mw',e.target.value)}/></label><label>Buik (cm)<input type="number" step=".1" value={today.mz||''} onChange={e=>log('mz',e.target.value)}/></label><button className="save" onClick={addMeasure}>Meting bewaren</button>{db.measure.slice().reverse().map(m=><div className="history"><b>{m.date}</b><span>{m.w||'–'} kg · {m.z||'–'} cm</span></div>)}</section>}</main>}export default App;
+'use client';
+import { useEffect, useState } from 'react';
+import './style.css';
+import { circuits, strength, abs, meals, circuitFor, sessionTypes, dayNames } from './data';
+import { loadDb, saveDb, migrate, localDate, programmeWeek, weekLabel } from './db';
+import Guided, { Art } from './Guided';
+
+function App() {
+  const [tab, setTab] = useState('today'),
+    [kind, setKind] = useState('circuit'),
+    [choice, setChoice] = useState('A'),
+    [db, setDb] = useState(null),
+    [guided, setGuided] = useState(null);
+
+  // Alles wat van localStorage of de datum afhangt pas na mount, zodat de
+  // statisch gerenderde HTML niet afwijkt van de client.
+  useEffect(() => { setDb(loadDb()) }, []);
+
+  const header = sub => <header><small>16 WEKEN · PERSOONLIJKE TRACKER</small><h1>Bas Fit 16</h1><p>{sub}</p></header>;
+  if (!db) return <main>{header('Start 91,5 kg · buik 102 cm')}</main>;
+
+  const date = localDate(),
+    day = (new Date().getDay() + 6) % 7,
+    today = db.logs[date] || {},
+    weekNr = programmeWeek(db.settings.startDate, date),
+    weekText = weekLabel(weekNr, db.settings.startDate),
+    circuitCfg = circuitFor(weekNr),
+    session = db.settings.schedule[day],
+    sessionType = sessionTypes[session] || { kind: 'rest' };
+
+  function update(fn) { setDb(prev => { const n = fn(prev); saveDb(n); return n }) }
+  function persist(n) { update(() => n) }
+  function log(k, v) { update(d => ({ ...d, logs: { ...d.logs, [date]: { ...(d.logs[date] || {}), [k]: v } } })) }
+  // Scores: c{A|B}{oefening}r{ronde}; scan alle rondes.
+  function best(g, i) {
+    const re = new RegExp(`^c${g}${i}r\\d+$`);
+    return Math.max(0, ...Object.values(db.logs).flatMap(l => Object.keys(l).filter(k => re.test(k)).map(k => Number(l[k]) || 0)));
+  }
+  function startGuided(kind, g) { setGuided(kind === 'circuit' ? { kind, g, cfg: circuitCfg } : { kind, g }) }
+  function setScheduleDay(i, v) {
+    update(d => ({ ...d, settings: { ...d.settings, schedule: d.settings.schedule.map((x, j) => j === i ? v : x) } }));
+  }
+  // Eén meting per datum: opnieuw bewaren vervangt de meting van vandaag.
+  function addMeasure() {
+    if (!today.mw && !today.mz) return;
+    update(d => ({ ...d, measure: [...d.measure.filter(m => m.date !== date), { date, w: today.mw || '', z: today.mz || '' }] }));
+  }
+  function deleteMeasure(i) {
+    const m = db.measure[i];
+    if (!confirm(`Meting van ${m.date} verwijderen?`)) return;
+    update(d => ({ ...d, measure: d.measure.filter((_, j) => j !== i) }));
+  }
+  async function exportData() {
+    const name = `basfit-${date}.json`;
+    const file = new File([JSON.stringify(db, null, 2)], name, { type: 'application/json' });
+    // Als beginschermapp op iOS werkt een download-link slecht; gebruik daar het deelmenu.
+    if (navigator.standalone && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: name }); return } catch (e) { if (e.name === 'AbortError') return }
+    }
+    const url = URL.createObjectURL(file), a = document.createElement('a');
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+  async function importData(e) {
+    const f = e.target.files[0];
+    e.target.value = '';
+    if (!f) return;
+    let d;
+    try { d = JSON.parse(await f.text()) } catch { alert('Dit is geen geldig JSON-bestand. Er is niets gewijzigd.'); return }
+    if (!d || !d.logs || typeof d.logs !== 'object' || Array.isArray(d.logs) || !Array.isArray(d.measure)) {
+      alert('Dit bestand mist "logs" of "measure". Er is niets gewijzigd.'); return;
+    }
+    if (!confirm(`Alle huidige gegevens vervangen door ${f.name}? (${Object.keys(d.logs).length} dagen, ${d.measure.length} metingen)`)) return;
+    persist(migrate(d));
+  }
+  function previous(key) {
+    let dates = Object.keys(db.logs).filter(d => d < date && db.logs[d][key]).sort().reverse();
+    return dates.length ? db.logs[dates[0]][key] : '';
+  }
+
+  if (guided) return <Guided plan={guided} today={today} best={best} previous={previous} onLog={log} onExit={() => setGuided(null)} />;
+
+  let mtb = !!today.mtb;
+  const switchKind = k => { setKind(k); setChoice('A') };
+  return <main>
+    {header(<>{weekText}<br />Start 91,5 kg · buik 102 cm</>)}
+    <nav>{[['today', 'Vandaag'], ['exercises', 'Oefeningen'], ['food', 'Eten'], ['history', 'Historie']].map(([k, n]) =>
+      <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{n}</button>)}</nav>
+
+    {tab === 'today' && <section>
+      <h2>Vandaag</h2>
+      <p className="weekLine">{weekText}</p>
+      <div className="hero"><b>{session}</b><span>{mtb ? 'MTB geregistreerd — vandaag geen stappendoel nodig.' : 'Gemiddeld 7.000–9.000 stappen · ±2.500 kcal · 160–170 g eiwit'}</span></div>
+      {sessionType.kind !== 'rest' && <button className="startWorkout" onClick={() => startGuided(sessionType.kind, sessionType.g)}>
+        Start {sessionType.kind === 'circuit' ? 'Circuit' : 'Kracht'} {sessionType.g}</button>}
+      <label>Stappen<input type="number" disabled={mtb} value={today.steps || ''} onChange={e => log('steps', e.target.value)} /></label>
+      <div className="mtb">
+        <label className="toggle"><input type="checkbox" checked={mtb} onChange={e => log('mtb', e.target.checked)} /><span>Vandaag mountainbiken</span></label>
+        {mtb && <div className="mtbFields">
+          <label>Duur (minuten)<input type="number" value={today.mtbMinutes || ''} onChange={e => log('mtbMinutes', e.target.value)} /></label>
+          <label>Afstand (km, optioneel)<input type="number" step=".1" value={today.mtbKm || ''} onChange={e => log('mtbKm', e.target.value)} /></label>
+        </div>}
+      </div>
+    </section>}
+
+    {tab === 'exercises' && <section>
+      <h2>Oefeningen</h2>
+      <div className="seg">
+        <button className={kind === 'circuit' ? 'on' : ''} onClick={() => switchKind('circuit')}>Circuit</button>
+        <button className={kind === 'strength' ? 'on' : ''} onClick={() => switchKind('strength')}>Kracht</button>
+      </div>
+      {kind === 'circuit' && <>
+        <div className="picker">
+          <button className={choice === 'A' ? 'on' : ''} onClick={() => setChoice('A')}>Circuit A</button>
+          <button className={choice === 'B' ? 'on' : ''} onClick={() => setChoice('B')}>Circuit B</button>
+        </div>
+        <div className="hero"><b>Circuit {choice}</b>
+          <span>{circuitCfg.rounds} rondes · {circuitCfg.work} sec werken → score → {circuitCfg.rest} sec rust → volgende oefening.</span>
+          {choice === 'B' && <span>Een stevige MTB-rit van 45–90 min mag dit circuit vervangen.</span>}</div>
+        <button className="startWorkout" onClick={() => startGuided('circuit', choice)}>Start Circuit {choice}</button>
+        {circuits[choice].map((x, i) => <article key={i}>
+          <Art file={x[1]} name={x[0]} /><b>{x[0]}</b><p>{x[2]}</p>
+          <p className="tip"><b>Let op:</b> {x[3]}</p>
+          <small>Beste score: {best(choice, i) || '–'}</small>
+        </article>)}
+      </>}
+      {kind === 'strength' && <>
+        <div className="picker three">{['A', 'B', 'C'].map(g =>
+          <button key={g} className={choice === g ? 'on' : ''} onClick={() => setChoice(g)}>Kracht {g}</button>)}</div>
+        <div className="hero"><b>Kracht {choice} + buik</b><span>De startgewichten zijn bewust conservatief. De eerste trainingen gebruiken we om jouw niveau te kalibreren.</span></div>
+        <button className="startWorkout" onClick={() => startGuided('strength', choice)}>Start Kracht {choice}</button>
+        {strength[choice].map((x, i) => {
+          let key = `s${choice}${i}`, prev = previous(key);
+          return <article key={key}>
+            <Art file={x[1]} name={x[0]} /><b>{x[0]}</b><em>{x[2]}</em>
+            <div className="weightAdvice"><b>Aanbevolen start</b><span>{x[4]}</span>{prev && <small>Vorige training: {prev}</small>}</div>
+            <p>{x[3]}</p>
+            <input placeholder="bv. 8 kg: 12 / 11 / 9" value={today[key] || ''} onChange={e => log(key, e.target.value)} />
+            <small>Regel: haal je alle 3 sets aan de bovengrens met nette techniek, verhoog de volgende keer één gewichtsstap.</small>
+          </article>;
+        })}
+        <h3>Buikblok</h3>
+        {abs.map((x, i) => {
+          let key = `ab${choice}${i}`, prev = previous(key);
+          return <article key={key}>
+            <Art file={x[1]} name={x[0]} /><b>{x[0]}</b><em>{x[2]}</em>
+            <div className="weightAdvice"><b>Aanbevolen start</b><span>{x[4]}</span>{prev && <small>Vorige training: {prev}</small>}</div>
+            <p>{x[3]}</p>
+            <input placeholder="gewicht / herhalingen" value={today[key] || ''} onChange={e => log(key, e.target.value)} />
+          </article>;
+        })}
+      </>}
+    </section>}
+
+    {tab === 'food' && <section>
+      <h2>Eten</h2>
+      <div className="hero"><b>±2.500 kcal · 160–170 g eiwit</b><span>Startpunt; na twee weken beoordelen we de trend.</span></div>
+      {meals.map(x => <article key={x[0]}><b>{x[0]}</b><p>{x[1]}</p></article>)}
+    </section>}
+
+    {tab === 'history' && <section>
+      <h2>Voortgang</h2>
+      <label>Gewicht (kg)<input type="number" step=".1" value={today.mw || ''} onChange={e => log('mw', e.target.value)} /></label>
+      <label>Buik (cm)<input type="number" step=".1" value={today.mz || ''} onChange={e => log('mz', e.target.value)} /></label>
+      <button className="save" onClick={addMeasure}>Meting bewaren</button>
+      {db.measure.map((m, i) => ({ m, i })).sort((a, b) => b.m.date.localeCompare(a.m.date) || b.i - a.i).map(({ m, i }) =>
+        <div key={i} className="history"><b>{m.date}</b><span>{m.w || '–'} kg · {m.z || '–'} cm</span>
+          <button className="del" aria-label={`Meting van ${m.date} verwijderen`} onClick={() => deleteMeasure(i)}>×</button></div>)}
+
+      <h3>Weekschema</h3>
+      {dayNames.map((n, i) => <label key={n} className={i === day ? 'scheduleDay today' : 'scheduleDay'}>{n}
+        <select value={db.settings.schedule[i]} onChange={e => setScheduleDay(i, e.target.value)}>
+          {Object.keys(sessionTypes).map(t => <option key={t}>{t}</option>)}
+        </select></label>)}
+
+      <h3>Gegevens</h3>
+      <button className="save" onClick={exportData}>Exporteer gegevens</button>
+      <label className="save secondary">Importeer gegevens
+        <input type="file" accept="application/json,.json" hidden onChange={importData} /></label>
+    </section>}
+  </main>;
+}
+
+export default App;
