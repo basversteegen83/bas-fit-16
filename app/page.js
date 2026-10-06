@@ -1,30 +1,40 @@
 'use client';
 import { useEffect, useState } from 'react';
 import './style.css';
-import { circuits, strength, abs, week, meals } from './data';
+import { circuits, strength, abs, week, meals, circuitFor } from './data';
+import { loadDb, saveDb, localDate, programmeWeek, weekLabel } from './db';
 import Guided, { Art } from './Guided';
 
 function App() {
   const [tab, setTab] = useState('today'),
     [kind, setKind] = useState('circuit'),
     [choice, setChoice] = useState('A'),
-    [db, setDb] = useState({ logs: {}, measure: [] }),
+    [db, setDb] = useState(null),
     [guided, setGuided] = useState(null);
 
-  useEffect(() => {
-    try { setDb(JSON.parse(localStorage.basfitdb) || { logs: {}, measure: [] }) } catch {}
-  }, []);
+  // Alles wat van localStorage of de datum afhangt pas na mount, zodat de
+  // statisch gerenderde HTML niet afwijkt van de client.
+  useEffect(() => { setDb(loadDb()) }, []);
 
-  const date = new Date().toISOString().slice(0, 10),
+  const header = sub => <header><small>16 WEKEN · PERSOONLIJKE TRACKER</small><h1>Bas Fit 16</h1><p>{sub}</p></header>;
+  if (!db) return <main>{header('Start 91,5 kg · buik 102 cm')}</main>;
+
+  const date = localDate(),
     day = (new Date().getDay() + 6) % 7,
-    today = db.logs[date] || {};
+    today = db.logs[date] || {},
+    weekNr = programmeWeek(db.settings.startDate, date),
+    weekText = weekLabel(weekNr, db.settings.startDate),
+    circuitCfg = circuitFor(weekNr);
 
-  function persist(n) { setDb(n); localStorage.basfitdb = JSON.stringify(n) }
-  function log(k, v) { persist({ ...db, logs: { ...db.logs, [date]: { ...today, [k]: v } } }) }
+  function update(fn) { setDb(prev => { const n = fn(prev); saveDb(n); return n }) }
+  function persist(n) { update(() => n) }
+  function log(k, v) { update(d => ({ ...d, logs: { ...d.logs, [date]: { ...(d.logs[date] || {}), [k]: v } } })) }
+  // Scores: c{A|B}{oefening}r{ronde}; scan alle rondes.
   function best(g, i) {
-    return Math.max(0, ...Object.values(db.logs).flatMap(l => [1, 2, 3].map(r => Number(l[`c${g}${i}r${r}`]) || 0)));
+    const re = new RegExp(`^c${g}${i}r\\d+$`);
+    return Math.max(0, ...Object.values(db.logs).flatMap(l => Object.keys(l).filter(k => re.test(k)).map(k => Number(l[k]) || 0)));
   }
-  function startGuided(g) { setGuided({ kind: 'circuit', g }) }
+  function startGuided(g) { setGuided({ kind: 'circuit', g, cfg: circuitCfg }) }
   function addMeasure() {
     if (!today.mw && !today.mz) return;
     persist({ ...db, measure: [...db.measure, { date, w: today.mw || '', z: today.mz || '' }] });
@@ -39,12 +49,13 @@ function App() {
   let mtb = !!today.mtb;
   const switchKind = k => { setKind(k); setChoice('A') };
   return <main>
-    <header><small>16 WEKEN · PERSOONLIJKE TRACKER</small><h1>Bas Fit 16</h1><p>Start 91,5 kg · buik 102 cm</p></header>
+    {header(<>{weekText}<br />Start 91,5 kg · buik 102 cm</>)}
     <nav>{[['today', 'Vandaag'], ['exercises', 'Oefeningen'], ['food', 'Eten'], ['history', 'Historie']].map(([k, n]) =>
       <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{n}</button>)}</nav>
 
     {tab === 'today' && <section>
       <h2>Vandaag</h2>
+      <p className="weekLine">{weekText}</p>
       <div className="hero"><b>{week[day]}</b><span>{mtb ? 'MTB geregistreerd — vandaag geen stappendoel nodig.' : 'Gemiddeld 7.000–9.000 stappen · ±2.500 kcal · 160–170 g eiwit'}</span></div>
       <label>Stappen<input type="number" disabled={mtb} value={today.steps || ''} onChange={e => log('steps', e.target.value)} /></label>
       <div className="mtb">
@@ -67,7 +78,9 @@ function App() {
           <button className={choice === 'A' ? 'on' : ''} onClick={() => setChoice('A')}>Circuit A</button>
           <button className={choice === 'B' ? 'on' : ''} onClick={() => setChoice('B')}>Circuit B</button>
         </div>
-        <div className="hero"><b>Circuit {choice}</b><span>{choice === 'B' ? 'Op zondag mag een stevige MTB-rit van 45–90 min dit circuit vervangen.' : '60 sec werken → score → 30 sec rust → volgende oefening.'}</span></div>
+        <div className="hero"><b>Circuit {choice}</b>
+          <span>{circuitCfg.rounds} rondes · {circuitCfg.work} sec werken → score → {circuitCfg.rest} sec rust → volgende oefening.</span>
+          {choice === 'B' && <span>Op zondag mag een stevige MTB-rit van 45–90 min dit circuit vervangen.</span>}</div>
         <button className="startWorkout" onClick={() => startGuided(choice)}>Start Circuit {choice}</button>
         {circuits[choice].map((x, i) => <article key={i}>
           <Art file={x[1]} name={x[0]} /><b>{x[0]}</b><p>{x[2]}</p>

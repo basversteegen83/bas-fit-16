@@ -7,8 +7,8 @@ export function Art({ file, name }) {
   return <img className="exerciseCard" src={`/exercises/cards/${file}.png`} alt={`${name} uitvoering`} />;
 }
 
-function circuitSteps(g) {
-  const list = circuits[g], rounds = 2, work = 60, rest = 30, steps = [];
+function circuitSteps(g, { rounds, work, rest }) {
+  const list = circuits[g], steps = [];
   for (let r = 1; r <= rounds; r++) list.forEach((ex, i) => {
     const label = `CIRCUIT ${g} · RONDE ${r}/${rounds}`;
     steps.push({ t: 'work', label, ex, g, i, r, secs: work });
@@ -20,7 +20,7 @@ function circuitSteps(g) {
 }
 
 export default function Guided({ plan, best, onLog, onExit }) {
-  const steps = useMemo(() => circuitSteps(plan.g), [plan]);
+  const steps = useMemo(() => circuitSteps(plan.g, plan.cfg), [plan]);
   const seq = useSequence(steps), { step, left } = seq;
   const [score, setScore] = useState('');
   useWakeLock(step.t !== 'done');

@@ -59,3 +59,20 @@ export const meals = [
   ['Diner', '±200 g kip/vis/mager vlees + veel groente + normale portie aardappel, rijst of pasta.'],
   ['Tussendoor', 'Kwark/skyr, fruit, cottage cheese of eiwitshake.'],
 ];
+
+// Programma: 16 weken vanaf de startdatum.
+export const PROGRAMME_WEEKS = 16;
+export const DEFAULT_SETTINGS = { startDate: '2026-10-06' };
+
+// Circuitopbouw per week. Pas hier rondes en werk/rust-tijden (seconden) aan.
+export const circuitProgression = [
+  { from: 1, to: 4, rounds: 2, work: 60, rest: 30 },
+  { from: 5, to: 8, rounds: 3, work: 60, rest: 30 },
+  { from: 9, to: 12, rounds: 3, work: 45, rest: 15 },
+  { from: 13, to: 16, rounds: 4, work: 45, rest: 15 },
+];
+
+export function circuitFor(weekNr) {
+  return circuitProgression.find(p => weekNr >= p.from && weekNr <= p.to)
+    || (weekNr < 1 ? circuitProgression[0] : circuitProgression[circuitProgression.length - 1]);
+}
