@@ -34,7 +34,7 @@ function App() {
     const re = new RegExp(`^c${g}${i}r\\d+$`);
     return Math.max(0, ...Object.values(db.logs).flatMap(l => Object.keys(l).filter(k => re.test(k)).map(k => Number(l[k]) || 0)));
   }
-  function startGuided(g) { setGuided({ kind: 'circuit', g, cfg: circuitCfg }) }
+  function startGuided(kind, g) { setGuided(kind === 'circuit' ? { kind, g, cfg: circuitCfg } : { kind, g }) }
   function addMeasure() {
     if (!today.mw && !today.mz) return;
     persist({ ...db, measure: [...db.measure, { date, w: today.mw || '', z: today.mz || '' }] });
@@ -44,7 +44,7 @@ function App() {
     return dates.length ? db.logs[dates[0]][key] : '';
   }
 
-  if (guided) return <Guided plan={guided} best={best} onLog={log} onExit={() => setGuided(null)} />;
+  if (guided) return <Guided plan={guided} today={today} best={best} previous={previous} onLog={log} onExit={() => setGuided(null)} />;
 
   let mtb = !!today.mtb;
   const switchKind = k => { setKind(k); setChoice('A') };
@@ -81,7 +81,7 @@ function App() {
         <div className="hero"><b>Circuit {choice}</b>
           <span>{circuitCfg.rounds} rondes · {circuitCfg.work} sec werken → score → {circuitCfg.rest} sec rust → volgende oefening.</span>
           {choice === 'B' && <span>Op zondag mag een stevige MTB-rit van 45–90 min dit circuit vervangen.</span>}</div>
-        <button className="startWorkout" onClick={() => startGuided(choice)}>Start Circuit {choice}</button>
+        <button className="startWorkout" onClick={() => startGuided('circuit', choice)}>Start Circuit {choice}</button>
         {circuits[choice].map((x, i) => <article key={i}>
           <Art file={x[1]} name={x[0]} /><b>{x[0]}</b><p>{x[2]}</p>
           <p className="tip"><b>Let op:</b> {x[3]}</p>
@@ -92,6 +92,7 @@ function App() {
         <div className="picker three">{['A', 'B', 'C'].map(g =>
           <button key={g} className={choice === g ? 'on' : ''} onClick={() => setChoice(g)}>Kracht {g}</button>)}</div>
         <div className="hero"><b>Kracht {choice} + buik</b><span>De startgewichten zijn bewust conservatief. De eerste trainingen gebruiken we om jouw niveau te kalibreren.</span></div>
+        <button className="startWorkout" onClick={() => startGuided('strength', choice)}>Start Kracht {choice}</button>
         {strength[choice].map((x, i) => {
           let key = `s${choice}${i}`, prev = previous(key);
           return <article key={key}>

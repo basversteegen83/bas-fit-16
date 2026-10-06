@@ -76,3 +76,28 @@ export function circuitFor(weekNr) {
   return circuitProgression.find(p => weekNr >= p.from && weekNr <= p.to)
     || (weekNr < 1 ? circuitProgression[0] : circuitProgression[circuitProgression.length - 1]);
 }
+
+// Warming-up en cooling-down voor begeleide trainingen: [naam, instructie, seconden].
+// De laatste warming-upoefening is een lichte versie van de eerste oefening van de training.
+export function warmup(firstExercise) {
+  return [
+    ['Marcheren met armcirkels', 'Marcheer stevig op de plaats en maak grote armcirkels; halverwege andersom.', 60],
+    ['Langzame squats', 'Zak in drie tellen, kom in één tel omhoog. Alleen lichaamsgewicht.', 45],
+    ['Heupscharnier (hip hinge)', 'Handen op de heupen, duw je heupen naar achteren met rechte rug en kom weer rechtop.', 45],
+    ['Inchworms', 'Loop met je handen naar een plank en weer terug; knieën mogen buigen.', 45],
+    [`Lichte uitvoering: ${firstExercise}`, 'Rustig tempo, zonder of met licht gewicht, op ongeveer de helft van je inzet.', 45],
+  ];
+}
+
+export const cooldown = [
+  ['Heupbuigers – links', 'Kniel op je linkerknie, rechtervoet voor. Schuif je heup naar voren en span je bil aan.', 40],
+  ['Heupbuigers – rechts', 'Kniel op je rechterknie, linkervoet voor. Schuif je heup naar voren en span je bil aan.', 40],
+  ['Hamstrings – links', 'Linkerbeen gestrekt op de hak, buig met rechte rug vanuit je heup naar voren.', 40],
+  ['Hamstrings – rechts', 'Rechterbeen gestrekt op de hak, buig met rechte rug vanuit je heup naar voren.', 40],
+  ['Borst (deurpost)', 'Onderarmen tegen de deurpost op schouderhoogte en stap rustig door tot je de borst voelt.', 40],
+  ['Latissimus', 'Pak een deurpost of tafelrand en zak met je heupen naar achteren tot je de zijkant van je rug voelt.', 40],
+  ['Kindhouding', 'Zit op je hielen, armen ver naar voren, borst richting de vloer en adem rustig door.', 40],
+];
+
+// Rust tussen sets in de begeleide krachttraining (seconden).
+export const SET_REST = 90;
