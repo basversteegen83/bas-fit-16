@@ -1,5 +1,11 @@
 # Changelog
 
+## past-steps (2026-10-13)
+
+- **Stappen en MTB voor eerdere dagen.** Op het tabblad Vandaag staat boven het stappenveld een dagkiezer (‹ Gisteren ›). Daarmee vul je stappen en MTB voor een vergeten dag alsnog in; ze worden onder die datum opgeslagen. Vooruit gaat niet verder dan vandaag. "Terug naar vandaag" springt terug.
+- Het stappenveld opent op de iPhone het numerieke toetsenbord (`inputMode="numeric"`).
+- De tekst in het hero-blok kijkt nog steeds naar de MTB van vandaag, niet naar de gekozen dag.
+
 ## strength-supersets (2026-10-06)
 
 Guided strength took about 60–65 minutes because there was a 90 s rest after each of the 24–27 sets. The goal is 35–40 minutes including warm-up and cooldown.
