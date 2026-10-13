@@ -10,7 +10,8 @@ function App() {
     [kind, setKind] = useState('circuit'),
     [choice, setChoice] = useState('A'),
     [db, setDb] = useState(null),
-    [guided, setGuided] = useState(null);
+    [guided, setGuided] = useState(null),
+    [stepsBack, setStepsBack] = useState(0);
 
   // Alles wat van localStorage of de datum afhangt pas na mount, zodat de
   // statisch gerenderde HTML niet afwijkt van de client.
@@ -30,7 +31,8 @@ function App() {
 
   function update(fn) { setDb(prev => { const n = fn(prev); saveDb(n); return n }) }
   function persist(n) { update(() => n) }
-  function log(k, v) { update(d => ({ ...d, logs: { ...d.logs, [date]: { ...(d.logs[date] || {}), [k]: v } } })) }
+  function logOn(dt, k, v) { update(d => ({ ...d, logs: { ...d.logs, [dt]: { ...(d.logs[dt] || {}), [k]: v } } })) }
+  function log(k, v) { logOn(date, k, v) }
   // Scores: c{A|B}{oefening}r{ronde}; scan alle rondes.
   function best(g, i) {
     const re = new RegExp(`^c${g}${i}r\\d+$`);
@@ -81,7 +83,14 @@ function App() {
 
   if (guided) return <Guided plan={guided} today={today} best={best} previous={previous} onLog={log} onExit={() => setGuided(null)} />;
 
-  let mtb = !!today.mtb;
+  // Stappen en MTB kunnen ook voor eerdere dagen worden ingevuld (vergeten = later aanvullen).
+  const stepsDay = new Date(); stepsDay.setDate(stepsDay.getDate() - stepsBack);
+  const stepsDate = localDate(stepsDay),
+    stepsLog = db.logs[stepsDate] || {},
+    stepsLabel = stepsBack === 0 ? 'Vandaag' : stepsBack === 1 ? 'Gisteren'
+      : stepsDay.toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long' }),
+    logSteps = (k, v) => logOn(stepsDate, k, v);
+  let mtb = !!stepsLog.mtb;
   const switchKind = k => { setKind(k); setChoice('A') };
   return <main>
     {header(<>{weekText}<br />Start 91,5 kg · buik 102 cm</>)}
@@ -91,17 +100,23 @@ function App() {
     {tab === 'today' && <section>
       <h2>Vandaag</h2>
       <p className="weekLine">{weekText}</p>
-      <div className="hero"><b>{session}</b><span>{mtb ? 'MTB geregistreerd — vandaag geen stappendoel nodig.' : 'Gemiddeld 7.000–9.000 stappen · ±2.500 kcal · 160–170 g eiwit'}</span></div>
+      <div className="hero"><b>{session}</b><span>{today.mtb ? 'MTB geregistreerd — vandaag geen stappendoel nodig.' : 'Gemiddeld 7.000–9.000 stappen · ±2.500 kcal · 160–170 g eiwit'}</span></div>
       {sessionType.kind !== 'rest' && <button className="startWorkout" onClick={() => startGuided(sessionType.kind, sessionType.g)}>
         Start {sessionType.kind === 'circuit' ? 'Circuit' : 'Kracht'} {sessionType.g}</button>}
-      <label>Stappen<input type="number" disabled={mtb} value={today.steps || ''} onChange={e => log('steps', e.target.value)} /></label>
+      <div className="dayPicker">
+        <button aria-label="Vorige dag" onClick={() => setStepsBack(n => n + 1)}>‹</button>
+        <b>{stepsLabel}</b>
+        <button aria-label="Volgende dag" disabled={stepsBack === 0} onClick={() => setStepsBack(n => Math.max(0, n - 1))}>›</button>
+      </div>
+      <label>Stappen<input type="number" inputMode="numeric" disabled={mtb} value={stepsLog.steps || ''} onChange={e => logSteps('steps', e.target.value)} /></label>
       <div className="mtb">
-        <label className="toggle"><input type="checkbox" checked={mtb} onChange={e => log('mtb', e.target.checked)} /><span>Vandaag mountainbiken</span></label>
+        <label className="toggle"><input type="checkbox" checked={mtb} onChange={e => logSteps('mtb', e.target.checked)} /><span>{stepsBack === 0 ? 'Vandaag' : 'Deze dag'} mountainbiken</span></label>
         {mtb && <div className="mtbFields">
-          <label>Duur (minuten)<input type="number" value={today.mtbMinutes || ''} onChange={e => log('mtbMinutes', e.target.value)} /></label>
-          <label>Afstand (km, optioneel)<input type="number" step=".1" value={today.mtbKm || ''} onChange={e => log('mtbKm', e.target.value)} /></label>
+          <label>Duur (minuten)<input type="number" value={stepsLog.mtbMinutes || ''} onChange={e => logSteps('mtbMinutes', e.target.value)} /></label>
+          <label>Afstand (km, optioneel)<input type="number" step=".1" value={stepsLog.mtbKm || ''} onChange={e => logSteps('mtbKm', e.target.value)} /></label>
         </div>}
       </div>
+      {stepsBack > 0 && <button className="skip" onClick={() => setStepsBack(0)}>Terug naar vandaag</button>}
     </section>}
 
     {tab === 'exercises' && <section>
