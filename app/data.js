@@ -46,7 +46,7 @@ export const strength = {
 };
 
 export const abs = [
-  ['Weighted Crunch', 'weighted-crunch', '3 × 10–15', 'Krul schouders van vloer; houd eventueel een licht gewicht bij borst.', '2,5–3,5 kg'],
+  ['Dead Bug', 'dead-bug', '3 × 8–10 per kant', 'Lig op je rug, armen naar het plafond, knieën boven de heupen. Strek tegenovergestelde arm en been net boven de vloer, terug, wissel.', 'Lichaamsgewicht'],
   ['Reverse Crunch', 'reverse-crunches', '3 × 8–15', 'Breng knieën richting borst en kantel bekken rustig omhoog.', 'Lichaamsgewicht'],
   ['Forearm Plank', 'forearm-plank', '3 × 30–60 sec', 'Span buik en billen en houd lichaam recht.', 'Lichaamsgewicht'],
 ];
@@ -124,6 +124,6 @@ export const strengthSupersets = {
 export const STRENGTH_ROUNDS = 3;
 export const SUPERSET_REST = 75; // rust tussen rondes van een superset (seconden)
 export const SINGLE_REST = 90; // rust tussen sets van een losse oefening
-// Buikblok als één circuit: Weighted Crunch → Reverse Crunch → Forearm Plank.
+// Buikblok als één circuit: Dead Bug → Reverse Crunch → Forearm Plank.
 export const ABS_ROUNDS = 3;
 export const ABS_REST = 30;

@@ -1,5 +1,9 @@
 # Changelog
 
+## travel-mode (2026-10-20)
+
+- **Buikblok: Dead Bug in plaats van Weighted Crunch.** Het buikcircuit is nu Dead Bug → Reverse Crunch → Forearm Plank (3 × 8–10 per kant, lichaamsgewicht). De logsleutel `ab{g}0` blijft dezelfde, dus oude Weighted Crunch-logs staan als "Vorige training" bij Dead Bug.
+
 ## past-steps (2026-10-13)
 
 - **Stappen en MTB voor eerdere dagen.** Op het tabblad Vandaag staat boven het stappenveld een dagkiezer (‹ Gisteren ›). Daarmee vul je stappen en MTB voor een vergeten dag alsnog in; ze worden onder die datum opgeslagen. Vooruit gaat niet verder dan vandaag. "Terug naar vandaag" springt terug.
