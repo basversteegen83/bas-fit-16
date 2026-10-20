@@ -1,5 +1,15 @@
 # Changelog
 
+## travel-mode (2026-10-20)
+
+- **Buikblok: Dead Bug in plaats van Weighted Crunch.** Het buikcircuit is nu Dead Bug → Reverse Crunch → Forearm Plank (3 × 8–10 per kant, lichaamsgewicht). De logsleutel `ab{g}0` blijft dezelfde, dus oude Weighted Crunch-logs staan als "Vorige training" bij Dead Bug.
+- **Reismodus "Zonder gewichten".** Toggle "Onderweg zonder gewichten" op Vandaag, onder de MTB-toggle. Zolang hij aanstaat staat "ZONDER GEWICHTEN" in de header en krijgt elke sessie lichaamsgewicht-varianten. Uitzetten = alles weer normaal.
+  - `settings.noWeights` (default `false`). Ontbreekt de waarde in oudere data, dan wordt hij `false`; geen versiebump.
+  - `bodyweightSubs` in `data.js`, gesleuteld op de afbeeldingsnaam: Bent-over Rows en One-arm Row → Handdoek-row aan de deur, Romanian Deadlift → Single-leg RDL, Floor Press → Push-ups, Shoulder Press → Pike Push-up, Lateral Raise → Superman Hold, Goblet Squat → Tempo Squat. Split Squat en het buikblok blijven zoals ze zijn.
+  - `withSubs(exercise, noWeights)` past de vervanging toe in het Oefeningen-tabblad, het begeleide circuit, de begeleide kracht (zelfde superset-paren) en de warming-upregel "Lichte uitvoering: …". Krachtoefeningen houden hun sets, behalve Superman Hold (3 × 30 sec) en Push-ups/Pike Push-up (3 × zo veel nette herhalingen als lukt); aanbevolen gewicht wordt "Lichaamsgewicht" en het aandachtspunt staat eronder.
+  - **Loggen:** circuitscores houden hun sleutel. Krachtlogs van een vervangen oefening gaan onder `bws{g}{i}` (bv. `bwsA0`), zodat "Vorige training" van de dumbbell-oefening schoon blijft. Niet-vervangen oefeningen (Split Squat, buik) houden hun sleutel. Elke dag waarop je logt terwijl de modus aanstaat krijgt `noWeights: true`. Stappen/MTB voor eerdere dagen zetten die vlag niet.
+  - **Afbeeldingen:** de SVG's (towel-row, single-leg-rdl, pike-push-up, superman-hold, dead-bug, side-plank, bird-dog, glute-bridge) staan in `public/exercises/cards/`. `Art` laadt namen uit `svgCards` als .svg en de rest als .png; mislukt een .png, dan probeert hij de .svg, en anders verdwijnt de afbeelding in plaats van een gebroken icoon te tonen. Dead Bug heeft een .png en gebruikt die.
+
 ## past-steps (2026-10-13)
 
 - **Stappen en MTB voor eerdere dagen.** Op het tabblad Vandaag staat boven het stappenveld een dagkiezer (‹ Gisteren ›). Daarmee vul je stappen en MTB voor een vergeten dag alsnog in; ze worden onder die datum opgeslagen. Vooruit gaat niet verder dan vandaag. "Terug naar vandaag" springt terug.

@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import './style.css';
-import { circuits, strength, abs, meals, circuitFor, sessionTypes, dayNames } from './data';
+import { circuits, strength, abs, meals, circuitFor, sessionTypes, dayNames, withSubs, strengthKey } from './data';
 import { loadDb, saveDb, migrate, localDate, programmeWeek, weekLabel } from './db';
 import Guided, { Art } from './Guided';
 
@@ -17,7 +17,8 @@ function App() {
   // statisch gerenderde HTML niet afwijkt van de client.
   useEffect(() => { setDb(loadDb()) }, []);
 
-  const header = sub => <header><small>16 WEKEN · PERSOONLIJKE TRACKER</small><h1>Bas Fit 16</h1><p>{sub}</p></header>;
+  const header = sub => <header><small>16 WEKEN · PERSOONLIJKE TRACKER</small>
+    {db && db.settings.noWeights && <span className="noWeightsTag">ZONDER GEWICHTEN</span>}<h1>Bas Fit 16</h1><p>{sub}</p></header>;
   if (!db) return <main>{header('Start 91,5 kg · buik 102 cm')}</main>;
 
   const date = localDate(),
@@ -27,18 +28,23 @@ function App() {
     weekText = weekLabel(weekNr, db.settings.startDate),
     circuitCfg = circuitFor(weekNr),
     session = db.settings.schedule[day],
-    sessionType = sessionTypes[session] || { kind: 'rest' };
+    sessionType = sessionTypes[session] || { kind: 'rest' },
+    noWeights = db.settings.noWeights;
 
   function update(fn) { setDb(prev => { const n = fn(prev); saveDb(n); return n }) }
   function persist(n) { update(() => n) }
   function logOn(dt, k, v) { update(d => ({ ...d, logs: { ...d.logs, [dt]: { ...(d.logs[dt] || {}), [k]: v } } })) }
-  function log(k, v) { logOn(date, k, v) }
+  // In reismodus wordt de dag gemarkeerd met noWeights: true.
+  function log(k, v) {
+    update(d => ({ ...d, logs: { ...d.logs, [date]: { ...(d.logs[date] || {}), [k]: v, ...(noWeights ? { noWeights: true } : {}) } } }));
+  }
+  function setNoWeights(on) { update(d => ({ ...d, settings: { ...d.settings, noWeights: on } })) }
   // Scores: c{A|B}{oefening}r{ronde}; scan alle rondes.
   function best(g, i) {
     const re = new RegExp(`^c${g}${i}r\\d+$`);
     return Math.max(0, ...Object.values(db.logs).flatMap(l => Object.keys(l).filter(k => re.test(k)).map(k => Number(l[k]) || 0)));
   }
-  function startGuided(kind, g) { setGuided(kind === 'circuit' ? { kind, g, cfg: circuitCfg } : { kind, g }) }
+  function startGuided(kind, g) { setGuided(kind === 'circuit' ? { kind, g, cfg: circuitCfg, noWeights } : { kind, g, noWeights }) }
   function setScheduleDay(i, v) {
     update(d => ({ ...d, settings: { ...d.settings, schedule: d.settings.schedule.map((x, j) => j === i ? v : x) } }));
   }
@@ -116,6 +122,9 @@ function App() {
           <label>Afstand (km, optioneel)<input type="number" step=".1" value={stepsLog.mtbKm || ''} onChange={e => logSteps('mtbKm', e.target.value)} /></label>
         </div>}
       </div>
+      <div className="mtb">
+        <label className="toggle"><input type="checkbox" checked={noWeights} onChange={e => setNoWeights(e.target.checked)} /><span>Onderweg zonder gewichten</span></label>
+      </div>
       {stepsBack > 0 && <button className="skip" onClick={() => setStepsBack(0)}>Terug naar vandaag</button>}
     </section>}
 
@@ -134,7 +143,7 @@ function App() {
           <span>{circuitCfg.rounds} rondes · {circuitCfg.work} sec werken → score → {circuitCfg.rest} sec rust → volgende oefening.</span>
           {choice === 'B' && <span>Een stevige MTB-rit van 45–90 min mag dit circuit vervangen.</span>}</div>
         <button className="startWorkout" onClick={() => startGuided('circuit', choice)}>Start Circuit {choice}</button>
-        {circuits[choice].map((x, i) => <article key={i}>
+        {circuits[choice].map(ex => withSubs(ex, noWeights)).map((x, i) => <article key={i}>
           <Art file={x[1]} name={x[0]} /><b>{x[0]}</b><p>{x[2]}</p>
           <p className="tip"><b>Let op:</b> {x[3]}</p>
           <small>Beste score: {best(choice, i) || '–'}</small>
@@ -145,13 +154,14 @@ function App() {
           <button key={g} className={choice === g ? 'on' : ''} onClick={() => setChoice(g)}>Kracht {g}</button>)}</div>
         <div className="hero"><b>Kracht {choice} + buik</b><span>De startgewichten zijn bewust conservatief. De eerste trainingen gebruiken we om jouw niveau te kalibreren.</span></div>
         <button className="startWorkout" onClick={() => startGuided('strength', choice)}>Start Kracht {choice}</button>
-        {strength[choice].map((x, i) => {
-          let key = `s${choice}${i}`, prev = previous(key);
+        {strength[choice].map((ex, i) => {
+          let x = withSubs(ex, noWeights), key = strengthKey(ex, choice, i, noWeights), prev = previous(key);
           return <article key={key}>
             <Art file={x[1]} name={x[0]} /><b>{x[0]}</b><em>{x[2]}</em>
             <div className="weightAdvice"><b>Aanbevolen start</b><span>{x[4]}</span>{prev && <small>Vorige training: {prev}</small>}</div>
             <p>{x[3]}</p>
-            <input placeholder="bv. 8 kg: 12 / 11 / 9" value={today[key] || ''} onChange={e => log(key, e.target.value)} />
+            {x[5] && <p className="tip"><b>Let op:</b> {x[5]}</p>}
+            <input placeholder={x === ex ? 'bv. 8 kg: 12 / 11 / 9' : 'bv. 15 / 12 / 10'} value={today[key] || ''} onChange={e => log(key, e.target.value)} />
             <small>Regel: haal je alle 3 sets aan de bovengrens met nette techniek, verhoog de volgende keer één gewichtsstap.</small>
           </article>;
         })}

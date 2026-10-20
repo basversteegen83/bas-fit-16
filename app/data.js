@@ -46,10 +46,43 @@ export const strength = {
 };
 
 export const abs = [
-  ['Weighted Crunch', 'weighted-crunch', '3 × 10–15', 'Krul schouders van vloer; houd eventueel een licht gewicht bij borst.', '2,5–3,5 kg'],
+  ['Dead Bug', 'dead-bug', '3 × 8–10 per kant', 'Lig op je rug, armen naar het plafond, knieën boven de heupen. Strek tegenovergestelde arm en been net boven de vloer, terug, wissel.', 'Lichaamsgewicht'],
   ['Reverse Crunch', 'reverse-crunches', '3 × 8–15', 'Breng knieën richting borst en kantel bekken rustig omhoog.', 'Lichaamsgewicht'],
   ['Forearm Plank', 'forearm-plank', '3 × 30–60 sec', 'Span buik en billen en houd lichaam recht.', 'Lichaamsgewicht'],
 ];
+
+// Reismodus "Zonder gewichten": lichaamsgewicht-varianten, gesleuteld op de afbeelding
+// (tweede veld van een oefening), zodat het voor circuit én kracht werkt.
+// [naam, afbeelding, uitvoering, aandachtspunt, sets × herhalingen (alleen als die afwijkt)]
+const towelRow = ['Handdoek-row aan de deur', 'towel-row', 'Handdoek om de deurklink, voeten bij de deur, hang achterover met gestrekte armen en trek jezelf naar de deur.', 'Lichaam blijft één rechte lijn. Zwaarder: voeten dichter bij de deur.'];
+const maxReps = '3 × zo veel nette herhalingen als lukt';
+export const bodyweightSubs = {
+  'dumbbell-bent-over-rows': towelRow,
+  'one-arm-row': towelRow,
+  'dumbbell-romanian-deadlift': ['Single-leg RDL', 'single-leg-rdl', 'Op één been, knie licht gebogen. Buig vanuit de heup voorover en strek het andere been naar achteren.', 'Heupen recht naar de vloer, rug neutraal. Hand tegen de muur mag.'],
+  'floor-press': ['Push-ups', 'push-ups', 'Handen iets breder dan schouders. Zak gecontroleerd en duw terug.', 'Hoofd, romp en benen in één lijn. Lichter: handen op een verhoging.', maxReps],
+  'shoulder-press': ['Pike Push-up', 'pike-push-up', 'Heupen hoog in een omgekeerde V, hoofd richting vloer zakken en terugduwen.', 'Ellebogen naar achteren, niet wijd. Voeten op een stoel maakt het zwaarder.', maxReps],
+  'lateral-raise': ['Superman Hold', 'superman-hold', 'Op de buik, armen vooruit. Til armen, borst en benen een paar centimeter op, 3 tellen vast.', 'Kijk naar de vloer, nek in lijn.', '3 × 30 sec'],
+  'goblet-squat': ['Tempo Squat', 'bodyweight-squats', 'Zak in drie tellen, één tel pauze onderin, kom omhoog.', 'Knieën volgen tenen, hielen blijven staan.'],
+};
+
+// Oefening met lichaamsgewicht-variant als noWeights aan staat, anders ongewijzigd.
+// Circuit (4 velden) blijft circuitvorm; kracht krijgt het aandachtspunt als zesde veld.
+export function withSubs(ex, noWeights) {
+  const sub = noWeights && bodyweightSubs[ex[1]];
+  if (!sub) return ex;
+  const [name, file, how, tip, sets] = sub;
+  return ex.length === 4 ? [name, file, how, tip] : [name, file, sets || ex[2], how, 'Lichaamsgewicht', tip];
+}
+
+// Krachtlogs van een vervangen oefening krijgen prefix 'bw', zodat "Vorige training"
+// van de dumbbell-oefening niet vermengd raakt met een push-up-score.
+export function strengthKey(ex, g, i, noWeights) {
+  return `${noWeights && bodyweightSubs[ex[1]] ? 'bw' : ''}s${g}${i}`;
+}
+
+// Afbeeldingen die alleen als .svg bestaan; de rest is .png.
+export const svgCards = ['towel-row', 'single-leg-rdl', 'pike-push-up', 'superman-hold', 'side-plank', 'bird-dog', 'glute-bridge'];
 
 // Mogelijke sessies in het weekschema en welke begeleide training erbij hoort.
 export const sessionTypes = {
@@ -74,6 +107,7 @@ export const meals = [
 export const PROGRAMME_WEEKS = 16;
 export const DEFAULT_SETTINGS = {
   startDate: '2026-10-06',
+  noWeights: false,
   // Maandag eerst.
   schedule: ['Rust + wandelen', 'Kracht A + buik', 'Fit Circuit A', 'Kracht B + buik', 'Rust + wandelen', 'Fit Circuit B / MTB', 'Kracht C + buik'],
 };
@@ -124,6 +158,6 @@ export const strengthSupersets = {
 export const STRENGTH_ROUNDS = 3;
 export const SUPERSET_REST = 75; // rust tussen rondes van een superset (seconden)
 export const SINGLE_REST = 90; // rust tussen sets van een losse oefening
-// Buikblok als één circuit: Weighted Crunch → Reverse Crunch → Forearm Plank.
+// Buikblok als één circuit: Dead Bug → Reverse Crunch → Forearm Plank.
 export const ABS_ROUNDS = 3;
 export const ABS_REST = 30;

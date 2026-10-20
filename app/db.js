@@ -9,6 +9,8 @@ export function migrate(raw) {
   const settings = { ...DEFAULT_SETTINGS, ...(d.settings && typeof d.settings === 'object' ? d.settings : {}) };
   const sch = settings.schedule;
   if (!Array.isArray(sch) || sch.length !== 7 || !sch.every(x => x in sessionTypes)) settings.schedule = DEFAULT_SETTINGS.schedule;
+  // Reismodus; ontbreekt bij oudere data (geen versiebump nodig).
+  settings.noWeights = settings.noWeights === true;
   return {
     ...d,
     version: DB_VERSION,
