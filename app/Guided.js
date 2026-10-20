@@ -1,10 +1,13 @@
 'use client';
 import { Fragment, useMemo, useState } from 'react';
-import { circuits, strength, abs, warmup, cooldown, strengthSupersets, STRENGTH_ROUNDS, SUPERSET_REST, SINGLE_REST, ABS_ROUNDS, ABS_REST } from './data';
+import { circuits, strength, abs, warmup, cooldown, strengthSupersets, STRENGTH_ROUNDS, SUPERSET_REST, SINGLE_REST, ABS_ROUNDS, ABS_REST, withSubs, strengthKey, svgCards } from './data';
 import { useSequence, useWakeLock } from './useTimer';
 
+// Eerst .png; afbeeldingen uit svgCards (of een ontbrekende .png) laden als .svg.
 export function Art({ file, name }) {
-  return <img className="exerciseCard" src={`/exercises/cards/${file}.png`} alt={`${name} uitvoering`} />;
+  const ext = svgCards.includes(file) ? 'svg' : 'png';
+  return <img key={file} className="exerciseCard" src={`/exercises/cards/${file}.${ext}`} alt={`${name} uitvoering`}
+    onError={e => { const img = e.currentTarget; if (img.src.endsWith('.png')) img.src = img.src.replace(/\.png$/, '.svg'); else img.hidden = true }} />;
 }
 
 function stretchSteps(phase, list) {
@@ -12,8 +15,8 @@ function stretchSteps(phase, list) {
     ({ t: 'timed', phase, label: `${phase.toUpperCase()} ${i + 1}/${list.length}`, n: `${i + 1}/${list.length}`, title, text, secs }));
 }
 
-function circuitSteps(g, { rounds, work, rest }) {
-  const list = circuits[g], steps = stretchSteps('Warming-up', warmup(list[0][0]));
+function circuitSteps(g, { rounds, work, rest }, noWeights) {
+  const list = circuits[g].map(ex => withSubs(ex, noWeights)), steps = stretchSteps('Warming-up', warmup(list[0][0]));
   for (let r = 1; r <= rounds; r++) list.forEach((ex, i) => {
     const label = `CIRCUIT ${g} · RONDE ${r}/${rounds}`;
     steps.push({ t: 'work', label, ex, g, i, r, secs: work });
@@ -24,13 +27,13 @@ function circuitSteps(g, { rounds, work, rest }) {
   return steps;
 }
 
-function strengthSteps(g) {
-  const sets = strengthSupersets[g];
+function strengthSteps(g, noWeights) {
+  const sets = strengthSupersets[g], list = strength[g].map(ex => withSubs(ex, noWeights));
   const groups = [
     ...sets.map((idx, n) => {
       const pair = idx.length > 1, name = `${pair ? 'Superset' : 'Oefening'} ${n + 1}/${sets.length}`;
       return {
-        items: idx.map(i => ({ ex: strength[g][i], key: `s${g}${i}`, hint: 'bv. 8 kg: 12 / 11 / 9' })),
+        items: idx.map(i => ({ ex: list[i], key: strengthKey(strength[g][i], g, i, noWeights), hint: list[i] === strength[g][i] ? 'bv. 8 kg: 12 / 11 / 9' : 'bv. 15 / 12 / 10' })),
         rounds: STRENGTH_ROUNDS, rest: pair ? SUPERSET_REST : SINGLE_REST,
         name, label: `KRACHT ${g} · ${name.toUpperCase()}`, skip: pair ? 'Superset overslaan' : 'Oefening overslaan',
       };
@@ -40,7 +43,7 @@ function strengthSteps(g) {
       rounds: ABS_ROUNDS, rest: ABS_REST, name: 'Buikcircuit', label: 'BUIKCIRCUIT', skip: 'Buikcircuit overslaan',
     },
   ];
-  const steps = stretchSteps('Warming-up', warmup(strength[g][0][0]));
+  const steps = stretchSteps('Warming-up', warmup(list[0][0]));
   groups.forEach((grp, gi) => {
     for (let r = 1; r <= grp.rounds; r++) {
       grp.items.forEach((it, k) => steps.push({ t: 'set', ...it, grp, gi, k, r, label: grp.label }));
@@ -52,7 +55,7 @@ function strengthSteps(g) {
 }
 
 export default function Guided({ plan, today, best, previous, onLog, onExit }) {
-  const steps = useMemo(() => plan.kind === 'strength' ? strengthSteps(plan.g) : circuitSteps(plan.g, plan.cfg), [plan]);
+  const steps = useMemo(() => plan.kind === 'strength' ? strengthSteps(plan.g, plan.noWeights) : circuitSteps(plan.g, plan.cfg, plan.noWeights), [plan]);
   const seq = useSequence(steps), { step, left } = seq;
   const [score, setScore] = useState('');
   useWakeLock(step.t !== 'done');
@@ -102,6 +105,7 @@ export default function Guided({ plan, today, best, previous, onLog, onExit }) {
         <article>
           <div className="weightAdvice"><b>Aanbevolen start</b><span>{step.ex[4]}</span>{previous(step.key) && <small>Vorige training: {previous(step.key)}</small>}</div>
           <p>{step.ex[3]}</p>
+          {step.ex[5] && <p className="tip"><b>Let op:</b> {step.ex[5]}</p>}
           <input placeholder={step.hint} value={today[step.key] || ''} onChange={e => onLog(step.key, e.target.value)} />
         </article>
         <button className="wide" onClick={seq.next}>Set klaar</button>
